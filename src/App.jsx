@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from './components/ui/tabs';
+import { Card, CardHeader, CardTitle, CardContent } from './components/ui/card';
+import { Button } from './components/ui/button';
 import { Sun, Moon } from 'lucide-react';
 
 import ChiefComplaints from './components/ChiefComplaints';
@@ -21,7 +21,6 @@ import Labs from './components/Labs';
 import DiagnosisSummary from './components/DiagnosisSummary';
 
 function App() {
-  // Theme toggle
   const [theme, setTheme] = useState('light');
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
@@ -29,7 +28,6 @@ function App() {
 
   const toggleTheme = () => setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
 
-  // Patient data state
   const [patientInfo, setPatientInfo] = useState({ name: '', age: '', sex: '', economicStatus: '' });
   const [historyData, setHistoryData] = useState({ chiefComplaints: [], pastMedicalHistory: [], pastSurgicalHistory: [] });
   const [activeTab, setActiveTab] = useState('history');
@@ -40,7 +38,6 @@ function App() {
   const goNext = () => currentIndex < tabOrder.length - 1 && setActiveTab(tabOrder[currentIndex + 1]);
   const goPrev = () => currentIndex > 0 && setActiveTab(tabOrder[currentIndex - 1]);
 
-  // Progress percentage
   const progress = ((currentIndex + 1) / tabOrder.length) * 100;
 
   return (
@@ -54,7 +51,6 @@ function App() {
         </Button>
       </div>
 
-      {/* Progress Bar */}
       <div className="max-w-7xl mx-auto mb-6">
         <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
           <div className="bg-blue-600 dark:bg-blue-400 h-2 rounded-full" style={{ width: `${progress}%` }} />
@@ -69,14 +65,12 @@ function App() {
       </div>
 
       <div className="flex flex-col md:flex-row gap-6 max-w-7xl mx-auto">
-        {/* Sidebar: Patient Info */}
         <aside className="w-full md:w-1/4 bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
           <Card className="dark:bg-gray-800">
             <CardHeader>
               <CardTitle className="text-lg font-semibold text-gray-800 dark:text-gray-100">Patient Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Inputs with unified styling */}
               {['Name', 'Age'].map((field) => (
                 <input
                   key={field}
@@ -96,13 +90,8 @@ function App() {
                   className="w-full border dark:border-gray-600 bg-transparent rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-500"
                   required
                 >
-                  <option value="">
-                    {key === 'sex' ? 'Select Sex' : 'Economic Status'}
-                  </option>
-                  {(key === 'sex'
-                    ? ['male', 'female', 'other']
-                    : ['low', 'middle', 'high']
-                  ).map((opt) => (
+                  <option value="">{key === 'sex' ? 'Select Sex' : 'Economic Status'}</option>
+                  {(key === 'sex' ? ['male', 'female', 'other'] : ['low', 'middle', 'high']).map((opt) => (
                     <option key={opt} value={opt} className="capitalize">
                       {opt}
                     </option>
@@ -113,39 +102,33 @@ function App() {
           </Card>
         </aside>
 
-        {/* Main Content Tabs */}
         <main className="flex-1">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
             <TabsList>
-              <TabsTrigger value="history">History</TabsTrigger>
-              <TabsTrigger value="examination">Examination</TabsTrigger>
-              <TabsTrigger value="investigation">Investigation</TabsTrigger>
-              <TabsTrigger value="summary">Summary</TabsTrigger>
+              {tabOrder.map((tab) => (
+                <TabsTrigger key={tab} value={tab}>
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </TabsTrigger>
+              ))}
             </TabsList>
 
             <TabsContent value="history">
               <div className="space-y-4">
                 <Card className="p-4 dark:bg-gray-800">
-                  <CardHeader>
-                    <CardTitle className="text-gray-800 dark:text-gray-100">Chief Complaints</CardTitle>
-                  </CardHeader>
+                  <CardHeader><CardTitle className="text-gray-800 dark:text-gray-100">Chief Complaints</CardTitle></CardHeader>
                   <CardContent>
                     <ChiefComplaints onSave={(data) => setHistoryData((prev) => ({ ...prev, chiefComplaints: data }))} />
                   </CardContent>
                 </Card>
                 <Card className="p-4 dark:bg-gray-800">
-                  <CardHeader>
-                    <CardTitle className="text-gray-800 dark:text-gray-100">Past Medical & Surgical History</CardTitle>
-                  </CardHeader>
+                  <CardHeader><CardTitle className="text-gray-800 dark:text-gray-100">Past Medical & Surgical History</CardTitle></CardHeader>
                   <CardContent>
                     <PastMedicalHistory onSave={(data) => setHistoryData((prev) => ({ ...prev, pastMedicalHistory: data }))} />
                     <PastSurgicalHistory onSave={(data) => setHistoryData((prev) => ({ ...prev, pastSurgicalHistory: data }))} />
                   </CardContent>
                 </Card>
                 <Card className="p-4 dark:bg-gray-800">
-                  <CardHeader>
-                    <CardTitle className="text-gray-800 dark:text-gray-100">Family History & Allergies</CardTitle>
-                  </CardHeader>
+                  <CardHeader><CardTitle className="text-gray-800 dark:text-gray-100">Family History & Allergies</CardTitle></CardHeader>
                   <CardContent>
                     <FamilyHistory />
                     <Allergies />
@@ -157,16 +140,13 @@ function App() {
             <TabsContent value="examination">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card className="dark:bg-gray-800">
-                  <CardHeader>
-                    <CardTitle className="text-gray-800 dark:text-gray-100">Vitals</CardTitle>
-                  </CardHeader>
+                  <CardHeader><CardTitle className="text-gray-800 dark:text-gray-100">Vitals</CardTitle></CardHeader>
                   <CardContent><VitalsExamination /></CardContent>
                 </Card>
                 <Card className="dark:bg-gray-800">
                   <CardHeader><CardTitle className="text-gray-800 dark:text-gray-100">Systems Examination</CardTitle></CardHeader>
                   <CardContent>
-                    {[
-                      { title: 'Cardiovascular', Comp: CardiovascularSystem },
+                    {[{ title: 'Cardiovascular', Comp: CardiovascularSystem },
                       { title: 'Respiratory', Comp: RespiratorySystem },
                       { title: 'Gastrointestinal', Comp: GastrointestinalSystem },
                       { title: 'Neurological', Comp: NeurologicalSystem }
@@ -194,11 +174,8 @@ function App() {
             </TabsContent>
           </Tabs>
 
-          {/* Navigation Controls */}
           <div className="flex justify-between mt-6">
-            <Button variant="outline" disabled={currentIndex === 0} onClick={goPrev}>
-              Previous
-            </Button>
+            <Button variant="outline" disabled={currentIndex === 0} onClick={goPrev}>Previous</Button>
             <Button onClick={goNext} disabled={currentIndex === tabOrder.length - 1}>
               {currentIndex === tabOrder.length - 1 ? 'Finish' : 'Next'}
             </Button>
