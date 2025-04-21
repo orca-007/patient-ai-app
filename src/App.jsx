@@ -7,6 +7,8 @@ import DrugHistory from './components/DrugHistory';
 import Allergies from './components/Allergies';
 import CardiovascularSystem from './components/CardiovascularSystem';
 import RespiratorySystem from './components/RespiratorySystem';
+import GastrointestinalSystem from './components/GastrointestinalSystem';
+import NeurologicalSystem from './components/NeurologicalSystem';
 import OtherSystemicExamination from './components/OtherSystemicExamination';
 import VitalsExamination from './components/VitalsExamination';
 import Imaging from './components/Imaging';
@@ -99,6 +101,8 @@ function App() {
           <VitalsExamination />
           <CardiovascularSystem />
           <RespiratorySystem />
+          <GastrointestinalSystem/>
+          <NeurologicalSystem/>
           <OtherSystemicExamination />
           <Imaging />
           <Labs />
