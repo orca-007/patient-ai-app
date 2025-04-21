@@ -1,113 +1,199 @@
 import React, { useState } from 'react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+
 import ChiefComplaints from './components/ChiefComplaints';
 import PastMedicalHistory from './components/PastMedicalHistory';
 import PastSurgicalHistory from './components/PastSurgicalHistory';
 import FamilyHistory from './components/FamilyHistory';
 import DrugHistory from './components/DrugHistory';
 import Allergies from './components/Allergies';
+import VitalsExamination from './components/VitalsExamination';
 import CardiovascularSystem from './components/CardiovascularSystem';
 import RespiratorySystem from './components/RespiratorySystem';
 import GastrointestinalSystem from './components/GastrointestinalSystem';
 import NeurologicalSystem from './components/NeurologicalSystem';
 import OtherSystemicExamination from './components/OtherSystemicExamination';
-import VitalsExamination from './components/VitalsExamination';
 import Imaging from './components/Imaging';
 import Labs from './components/Labs';
 import DiagnosisSummary from './components/DiagnosisSummary';
 
 function App() {
-  const [patientInfo, setPatientInfo] = useState({
-    name: '',
-    age: '',
-    sex: '',
-    economicStatus: ''
+  const [patientInfo, setPatientInfo] = useState({ name: '', age: '', sex: '', economicStatus: '' });
+  const [historyData, setHistoryData] = useState({
+    chiefComplaints: [],
+    pastMedicalHistory: [],
+    pastSurgicalHistory: [],
   });
+  const [activeTab, setActiveTab] = useState('history');
 
-  const [chiefComplaints, setChiefComplaints] = useState([]);
-  const [pastMedicalHistory, setPastMedicalHistory] = useState([]);
-  const [pastSurgicalHistory, setPastSurgicalHistory] = useState([]);
+  const tabOrder = ['history', 'examination', 'investigation', 'summary'];
+  const currentIndex = tabOrder.indexOf(activeTab);
 
-  const handlePatientSubmit = (e) => {
-    e.preventDefault();
-    console.log('Patient Info:', patientInfo);
+  const goNext = () => {
+    if (currentIndex < tabOrder.length - 1) setActiveTab(tabOrder[currentIndex + 1]);
+  };
+
+  const goPrev = () => {
+    if (currentIndex > 0) setActiveTab(tabOrder[currentIndex - 1]);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white p-6">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-extrabold text-center text-blue-800 mb-6 drop-shadow-sm">
-          🧠 AI Patient Management System
-        </h1>
+    <div className="min-h-screen bg-gray-100 p-6">
+      <div className="flex flex-col md:flex-row gap-6 max-w-7xl mx-auto">
+        {/* Sidebar: Patient Info */}
+        <aside className="w-full md:w-1/4 bg-white rounded-2xl shadow-lg p-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold">Patient Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <input
+                type="text"
+                placeholder="Name"
+                value={patientInfo.name}
+                onChange={(e) => setPatientInfo({ ...patientInfo, name: e.target.value })}
+                className="w-full border rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                required
+              />
+              <input
+                type="number"
+                placeholder="Age"
+                value={patientInfo.age}
+                onChange={(e) => setPatientInfo({ ...patientInfo, age: e.target.value })}
+                className="w-full border rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                required
+              />
+              <select
+                value={patientInfo.sex}
+                onChange={(e) => setPatientInfo({ ...patientInfo, sex: e.target.value })}
+                className="w-full border rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                required
+              >
+                <option value="">Select Sex</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+              </select>
+              <select
+                value={patientInfo.economicStatus}
+                onChange={(e) => setPatientInfo({ ...patientInfo, economicStatus: e.target.value })}
+                className="w-full border rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                required
+              >
+                <option value="">Economic Status</option>
+                <option value="low">Low</option>
+                <option value="middle">Middle</option>
+                <option value="high">High</option>
+              </select>
+            </CardContent>
+          </Card>
+        </aside>
 
-        {/* Patient Info Form */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 transition-all duration-300 hover:shadow-2xl">
-          <h2 className="text-xl font-semibold mb-4 text-blue-700">👤 Patient Information</h2>
-          <form onSubmit={handlePatientSubmit} className="space-y-4">
-            <input
-              type="text"
-              placeholder="Name"
-              value={patientInfo.name}
-              onChange={(e) => setPatientInfo({ ...patientInfo, name: e.target.value })}
-              className="w-full border rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300"
-              required
-            />
-            <input
-              type="number"
-              placeholder="Age"
-              value={patientInfo.age}
-              onChange={(e) => setPatientInfo({ ...patientInfo, age: e.target.value })}
-              className="w-full border rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300"
-              required
-            />
-            <select
-              value={patientInfo.sex}
-              onChange={(e) => setPatientInfo({ ...patientInfo, sex: e.target.value })}
-              className="w-full border rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300"
-              required
-            >
-              <option value="">Select Sex</option>
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-              <option value="other">Other</option>
-            </select>
-            <select
-              value={patientInfo.economicStatus}
-              onChange={(e) => setPatientInfo({ ...patientInfo, economicStatus: e.target.value })}
-              className="w-full border rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300"
-              required
-            >
-              <option value="">Economic Status</option>
-              <option value="low">Low</option>
-              <option value="middle">Middle</option>
-              <option value="high">High</option>
-            </select>
-            <button
-              type="submit"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl transition-all duration-200 shadow-md"
-            >
-              Save & Continue →
-            </button>
-          </form>
-        </div>
+        {/* Main Content */}
+        <main className="flex-1">
+          <h1 className="text-4xl font-bold mb-4 text-center md:text-left text-blue-800">
+            AI Patient Management System
+          </h1>
 
-        {/* Components Section */}
-        <div className="space-y-6">
-          <ChiefComplaints onSave={(complaints) => setChiefComplaints(complaints)} />
-          <PastMedicalHistory onSave={(data) => setPastMedicalHistory(data)} />
-          <PastSurgicalHistory onSave={(data) => setPastSurgicalHistory(data)} />
-          <FamilyHistory />
-          <DrugHistory />
-          <Allergies />
-          <VitalsExamination />
-          <CardiovascularSystem />
-          <RespiratorySystem />
-          <GastrointestinalSystem/>
-          <NeurologicalSystem/>
-          <OtherSystemicExamination />
-          <Imaging />
-          <Labs />
-          <DiagnosisSummary />
-        </div>
+          {/* Tabs Navigation */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+            <TabsList>
+              <TabsTrigger value="history">History</TabsTrigger>
+              <TabsTrigger value="examination">Examination</TabsTrigger>
+              <TabsTrigger value="investigation">Investigation</TabsTrigger>
+              <TabsTrigger value="summary">Summary</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="history">
+              <div className="space-y-4">
+                <Card className="p-4">
+                  <CardHeader>
+                    <CardTitle>Chief Complaints</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ChiefComplaints onSave={(data) => setHistoryData((prev) => ({ ...prev, chiefComplaints: data }))} />
+                  </CardContent>
+                </Card>
+                <Card className="p-4">
+                  <CardHeader>
+                    <CardTitle>Past Medical & Surgical History</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <PastMedicalHistory onSave={(data) => setHistoryData((prev) => ({ ...prev, pastMedicalHistory: data }))} />
+                    <PastSurgicalHistory onSave={(data) => setHistoryData((prev) => ({ ...prev, pastSurgicalHistory: data }))} />
+                  </CardContent>
+                </Card>
+                <Card className="p-4">
+                  <CardHeader>
+                    <CardTitle>Family History & Allergies</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <FamilyHistory />
+                    <Allergies />
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="examination">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Vitals</CardTitle>
+                  </CardHeader>
+                  <CardContent><VitalsExamination /></CardContent>
+                </Card>
+                <Card>
+                  <CardHeader><CardTitle>Systems Examination</CardTitle></CardHeader>
+                  <CardContent>
+                    <Card className="mb-4 p-4">
+                      <CardHeader>
+                        <CardTitle>Cardiovascular</CardTitle>
+                      </CardHeader>
+                      <CardContent><CardiovascularSystem /></CardContent>
+                    </Card>
+                    <Card className="mb-4 p-4">
+                      <CardHeader><CardTitle>Respiratory</CardTitle></CardHeader>
+                      <CardContent><RespiratorySystem /></CardContent>
+                    </Card>
+                    <Card className="mb-4 p-4">
+                      <CardHeader><CardTitle>Gastrointestinal</CardTitle></CardHeader>
+                      <CardContent><GastrointestinalSystem /></CardContent>
+                    </Card>
+                    <Card className="mb-4 p-4">
+                      <CardHeader><CardTitle>Neurological</CardTitle></CardHeader>
+                      <CardContent><NeurologicalSystem /></CardContent>
+                    </Card>
+                    <OtherSystemicExamination />
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="investigation">
+              <div className="space-y-4">
+                <Imaging />
+                <Labs />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="summary">
+              <DiagnosisSummary />
+            </TabsContent>
+          </Tabs>
+
+          {/* Navigation Controls */}
+          <div className="flex justify-between mt-6">
+            <Button variant="outline" disabled={currentIndex === 0} onClick={goPrev}>
+              Previous
+            </Button>
+            <Button onClick={goNext} disabled={currentIndex === tabOrder.length - 1}>
+              {currentIndex === tabOrder.length - 1 ? 'Finish' : 'Next'}
+            </Button>
+          </div>
+        </main>
       </div>
     </div>
   );
