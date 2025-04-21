@@ -466,7 +466,7 @@ function RespiratorySystem({ onSave }) {
              </div>
              <div className="mt-6">
                  <h4 className="font-semibold text-lg text-gray-700">Diagnosis Summary</h4>
-                 <p className="text-sm text-gray-500 mb-2">Format: Anatomical (Lung/Lobe/Pleura) -> Pathological (Consolidation/Fibrosis/Effusion/etc.) -> Etiological (TB/Malignancy/Smoking/etc.) -> Complications (Resp Failure/Cor Pulmonale).</p>
+                 <p className="text-sm text-gray-500 mb-2">Format: Anatomical (Lung/Lobe/Pleura) -&gt Pathological (Consolidation/Fibrosis/Effusion/etc.) -&gt Etiological (TB/Malignancy/Smoking/etc.) -&gt Complications (Resp Failure/Cor Pulmonale).</p>
                  <textarea
                     name="diagnosisSummary"
                     value={formData.diagnosisSummary}
