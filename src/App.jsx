@@ -44,8 +44,15 @@ function App() {
   
   const [historyData, setHistoryData] = useState({
     chiefComplaints: ['Chest pain for 2 days', 'Shortness of breath on exertion'],
-    pastMedicalHistory: ['Hypertension', 'Type 2 Diabetes'],
-    pastSurgicalHistory: ['Appendectomy (2010)']
+    chiefComplaintsRecordId: null,
+    pastMedicalHistory: { hasHistory: false, details: '' }, 
+    pastMedicalHistoryRecordId: null, 
+    pastSurgicalHistory: [], 
+    pastSurgicalHistoryRecordId: null, 
+    familyHistory: '', 
+    familyHistoryRecordId: null, 
+    allergies: '', // Corrected to string
+    allergiesRecordId: null, 
   });
   
   const [examinationData, setExaminationData] = useState({
@@ -119,6 +126,10 @@ function App() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState('');
+  const [currentPatientId, setCurrentPatientId] = useState(null);
+  const [isSavingSection, setIsSavingSection] = useState(false);
+  const [sectionSaveSuccess, setSectionSaveSuccess] = useState(''); // Stores success message
+  const [sectionSaveError, setSectionSaveError] = useState('');     // Stores error message
   
   // Theme handling
   useEffect(() => {
@@ -139,10 +150,21 @@ function App() {
     setIsSaving(true);
     setSaveSuccess(false);
     setSaveError('');
-    
+
+    if (!currentUser) {
+      setSaveError('You must be logged in to save patient data.');
+      setIsSaving(false);
+      return;
+    }
+
     try {
-      // Simulate saving to database
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      let patientIdToUpdate = currentPatientId;
+      if (patientIdToUpdate) {
+        await updatePatient(patientIdToUpdate, patientInfo);
+      } else {
+        const newPatientId = await savePatient(patientInfo, currentUser.uid);
+        setCurrentPatientId(newPatientId); // Store the new ID
+      }
       
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
@@ -151,6 +173,196 @@ function App() {
       setSaveError('Failed to save patient data. Please try again.');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleSaveAllergies = async (allergiesData) => {
+    setIsSavingSection(true);
+    setSectionSaveSuccess('');
+    setSectionSaveError('');
+
+    if (!currentUser) {
+      setSectionSaveError('You must be logged in.');
+      setIsSavingSection(false);
+      return;
+    }
+
+    if (!currentPatientId) {
+      setSectionSaveError('Please save patient information first.');
+      setIsSavingSection(false);
+      return;
+    }
+
+    const recordData = { type: 'allergies', text: allergiesData };
+
+    try {
+      if (historyData.allergiesRecordId) {
+        await updateMedicalRecord(historyData.allergiesRecordId, recordData);
+      } else {
+        const newRecordId = await saveMedicalRecord(currentPatientId, recordData, currentUser.uid);
+        setHistoryData(prev => ({ ...prev, allergiesRecordId: newRecordId }));
+      }
+
+      setHistoryData(prev => ({ ...prev, allergies: allergiesData }));
+      setSectionSaveSuccess('Allergies saved successfully!');
+      setTimeout(() => setSectionSaveSuccess(''), 3000);
+    } catch (error) {
+      console.error("Error saving allergies:", error);
+      setSectionSaveError('Failed to save allergies.');
+    } finally {
+      setIsSavingSection(false);
+    }
+  };
+
+  const handleSaveFamilyHistory = async (fhData) => {
+    setIsSavingSection(true);
+    setSectionSaveSuccess('');
+    setSectionSaveError('');
+
+    if (!currentUser) {
+      setSectionSaveError('You must be logged in.');
+      setIsSavingSection(false);
+      return;
+    }
+
+    if (!currentPatientId) {
+      setSectionSaveError('Please save patient information first.');
+      setIsSavingSection(false);
+      return;
+    }
+
+    const recordData = { type: 'familyHistory', history: fhData };
+
+    try {
+      if (historyData.familyHistoryRecordId) {
+        await updateMedicalRecord(historyData.familyHistoryRecordId, recordData);
+      } else {
+        const newRecordId = await saveMedicalRecord(currentPatientId, recordData, currentUser.uid);
+        setHistoryData(prev => ({ ...prev, familyHistoryRecordId: newRecordId }));
+      }
+
+      setHistoryData(prev => ({ ...prev, familyHistory: fhData }));
+      setSectionSaveSuccess('Family history saved successfully!');
+      setTimeout(() => setSectionSaveSuccess(''), 3000);
+    } catch (error) {
+      console.error("Error saving family history:", error);
+      setSectionSaveError('Failed to save family history.');
+    } finally {
+      setIsSavingSection(false);
+    }
+  };
+
+  const handleSavePastSurgicalHistory = async (pshData) => {
+    setIsSavingSection(true);
+    setSectionSaveSuccess('');
+    setSectionSaveError('');
+
+    if (!currentUser) {
+      setSectionSaveError('You must be logged in.');
+      setIsSavingSection(false);
+      return;
+    }
+
+    if (!currentPatientId) {
+      setSectionSaveError('Please save patient information first.');
+      setIsSavingSection(false);
+      return;
+    }
+
+    const recordData = { type: 'pastSurgicalHistory', surgeries: pshData };
+
+    try {
+      if (historyData.pastSurgicalHistoryRecordId) {
+        await updateMedicalRecord(historyData.pastSurgicalHistoryRecordId, recordData);
+      } else {
+        const newRecordId = await saveMedicalRecord(currentPatientId, recordData, currentUser.uid);
+        setHistoryData(prev => ({ ...prev, pastSurgicalHistoryRecordId: newRecordId }));
+      }
+
+      setHistoryData(prev => ({ ...prev, pastSurgicalHistory: pshData }));
+      setSectionSaveSuccess('Past surgical history saved successfully!');
+      setTimeout(() => setSectionSaveSuccess(''), 3000);
+    } catch (error) {
+      console.error("Error saving past surgical history:", error);
+      setSectionSaveError('Failed to save past surgical history.');
+    } finally {
+      setIsSavingSection(false);
+    }
+  };
+
+  const handleSavePastMedicalHistory = async (pmhData) => {
+    setIsSavingSection(true);
+    setSectionSaveSuccess('');
+    setSectionSaveError('');
+
+    if (!currentUser) {
+      setSectionSaveError('You must be logged in.');
+      setIsSavingSection(false);
+      return;
+    }
+
+    if (!currentPatientId) {
+      setSectionSaveError('Please save patient information first.');
+      setIsSavingSection(false);
+      return;
+    }
+
+    const recordData = { type: 'pastMedicalHistory', history: pmhData };
+
+    try {
+      if (historyData.pastMedicalHistoryRecordId) {
+        await updateMedicalRecord(historyData.pastMedicalHistoryRecordId, recordData);
+      } else {
+        const newRecordId = await saveMedicalRecord(currentPatientId, recordData, currentUser.uid);
+        setHistoryData(prev => ({ ...prev, pastMedicalHistoryRecordId: newRecordId }));
+      }
+
+      setHistoryData(prev => ({ ...prev, pastMedicalHistory: pmhData }));
+      setSectionSaveSuccess('Past medical history saved successfully!');
+      setTimeout(() => setSectionSaveSuccess(''), 3000);
+    } catch (error) {
+      console.error("Error saving past medical history:", error);
+      setSectionSaveError('Failed to save past medical history.');
+    } finally {
+      setIsSavingSection(false);
+    }
+  };
+
+  const handleSaveChiefComplaints = async (complaintsData) => {
+    setIsSavingSection(true);
+    setSectionSaveSuccess('');
+    setSectionSaveError('');
+
+    if (!currentUser) {
+      setSectionSaveError('You must be logged in.');
+      setIsSavingSection(false);
+      return;
+    }
+
+    if (!currentPatientId) {
+      setSectionSaveError('Please save patient information first.');
+      setIsSavingSection(false);
+      return;
+    }
+
+    const recordData = { type: 'chiefComplaints', complaints: complaintsData };
+
+    try {
+      if (historyData.chiefComplaintsRecordId) {
+        await updateMedicalRecord(historyData.chiefComplaintsRecordId, recordData);
+      } else {
+        const newRecordId = await saveMedicalRecord(currentPatientId, recordData, currentUser.uid);
+        setHistoryData(prev => ({ ...prev, chiefComplaintsRecordId: newRecordId }));
+      }
+
+      setHistoryData(prev => ({ ...prev, chiefComplaints: complaintsData }));
+      setSectionSaveSuccess('Chief complaints saved successfully!');
+      setTimeout(() => setSectionSaveSuccess(''), 3000);
+    } catch (error) {
+      console.error("Error saving chief complaints:", error);
+      setSectionSaveError('Failed to save chief complaints.');
+    } finally {
+      setIsSavingSection(false);
     }
   };
 
@@ -164,7 +376,7 @@ function App() {
           <Button variant="outline" onClick={toggleTheme} className="rounded-full p-2">
             {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
           </Button>
-          <Button variant="outline" onClick={() => {}} className="rounded-full p-2">
+          <Button variant="outline" onClick={logout} className="rounded-full p-2">
             <LogOut size={18} />
           </Button>
         </div>
@@ -277,15 +489,28 @@ function App() {
             
             <TabsContent value="history">
               <div className="space-y-4">
+                {sectionSaveSuccess && (
+                  <div className="bg-green-100 text-green-700 px-3 py-2 rounded-md text-sm mb-2">
+                    {sectionSaveSuccess}
+                  </div>
+                )}
+                {sectionSaveError && (
+                  <div className="bg-red-100 text-red-700 px-3 py-2 rounded-md text-sm mb-2">
+                    {sectionSaveError}
+                  </div>
+                )}
+                {isSavingSection && (
+                  <div className="bg-blue-100 text-blue-700 px-3 py-2 rounded-md text-sm mb-2">
+                    Saving section data...
+                  </div>
+                )}
                 <Card className="p-4 dark:bg-gray-800">
                   <CardHeader>
                     <CardTitle className="text-gray-800 dark:text-gray-100">Chief Complaints</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <ChiefComplaints
-                      onSave={(data) =>
-                        setHistoryData((prev) => ({ ...prev, chiefComplaints: data }))
-                      }
+                      onSave={handleSaveChiefComplaints} // Changed from the inline function
                     />
                   </CardContent>
                 </Card>
@@ -298,14 +523,10 @@ function App() {
                   </CardHeader>
                   <CardContent>
                     <PastMedicalHistory
-                      onSave={(data) =>
-                        setHistoryData((prev) => ({ ...prev, pastMedicalHistory: data }))
-                      }
+                      onSave={handleSavePastMedicalHistory}
                     />
                     <PastSurgicalHistory
-                      onSave={(data) =>
-                        setHistoryData((prev) => ({ ...prev, pastSurgicalHistory: data }))
-                      }
+                      onSave={handleSavePastSurgicalHistory}
                     />
                   </CardContent>
                 </Card>
@@ -318,14 +539,10 @@ function App() {
                   </CardHeader>
                   <CardContent>
                     <FamilyHistory 
-                      onSave={(data) => 
-                        setHistoryData((prev) => ({ ...prev, familyHistory: data }))
-                      }
+                      onSave={handleSaveFamilyHistory}
                     />
                     <Allergies 
-                      onSave={(data) => 
-                        setHistoryData((prev) => ({ ...prev, allergies: data }))
-                      }
+                      onSave={handleSaveAllergies}
                     />
                   </CardContent>
                 </Card>
