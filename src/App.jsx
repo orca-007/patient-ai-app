@@ -28,9 +28,35 @@ import {
   MobileOnly,
   DesktopOnly
 } from './components/ResponsiveComponents';
-import { savePatient, updatePatient, saveMedicalRecord, saveMedication } from './lib/dbService';
+import { savePatient, updatePatient, saveMedicalRecord, saveMedication, getPatient, getPatientMedicalRecords, getPatientMedications } from './lib/dbService'; // Added dbService imports
+import { ArrowLeft } from 'lucide-react'; // Import an icon for the back button
 
-function App() {
+// Initial State Constants
+const INITIAL_PATIENT_INFO = { name: '', age: '', sex: '', economicStatus: '' };
+const INITIAL_HISTORY_DATA = {
+  chiefComplaints: [], chiefComplaintsRecordId: null,
+  pastMedicalHistory: { hasHistory: false, details: '' }, pastMedicalHistoryRecordId: null,
+  pastSurgicalHistory: [], pastSurgicalHistoryRecordId: null,
+  familyHistory: '', familyHistoryRecordId: null,
+  allergies: '', allergiesRecordId: null,
+};
+const INITIAL_EXAMINATION_DATA = { 
+  vitals: { temperature: '', pulse: '', respiratoryRate: '', bloodPressure: '', oxygenSaturation: '' },
+  vitalsRecordId: null, // Added for consistency if vitals are saved as a single record
+  // Will add other examination sections here later, e.g., cardiovascularRecordId, etc.
+};
+const INITIAL_INVESTIGATION_DATA = { 
+  labs: { /* TODO: Define initial structure if known, or keep empty for now */ },
+  // imaging: { /* ... */ } 
+};
+const INITIAL_DIAGNOSIS_DATA = { 
+  primaryDiagnosis: '', secondaryDiagnoses: '', differentialDiagnoses: '', 
+  treatmentPlan: '', followUpPlan: '', additionalNotes: '' 
+};
+const INITIAL_MEDICATION_DATA = [];
+
+
+function App({ selectedPatientId, onBackToPatientList }) { // Accept new props
   const [theme, setTheme] = useState('light');
   const { currentUser, logout } = useAuth();
   
@@ -126,10 +152,137 @@ function App() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState('');
-  const [currentPatientId, setCurrentPatientId] = useState(null);
+  const [currentPatientId, setCurrentPatientId] = useState(null); // Changed to null
   const [isSavingSection, setIsSavingSection] = useState(false);
   const [sectionSaveSuccess, setSectionSaveSuccess] = useState(''); // Stores success message
   const [sectionSaveError, setSectionSaveError] = useState('');     // Stores error message
+  const [isPatientDataLoading, setIsPatientDataLoading] = useState(false);
+  const [patientDataError, setPatientDataError] = useState(null);
+
+  useEffect(() => {
+    const loadData = async () => {
+      if (!currentUser) {
+        // Reset all states if user logs out or is not available
+        setPatientInfo(INITIAL_PATIENT_INFO);
+        setHistoryData(INITIAL_HISTORY_DATA);
+        setExaminationData(INITIAL_EXAMINATION_DATA);
+        setInvestigationData(INITIAL_INVESTIGATION_DATA);
+        setDiagnosisData(INITIAL_DIAGNOSIS_DATA);
+        setMedicationData(INITIAL_MEDICATION_DATA);
+        setCurrentPatientId(null);
+        setActiveTab('history');
+        setIsPatientDataLoading(false);
+        setPatientDataError(null);
+        return;
+      }
+
+      if (!selectedPatientId) { // New patient
+        setPatientInfo(INITIAL_PATIENT_INFO);
+        setHistoryData(INITIAL_HISTORY_DATA);
+        setExaminationData(INITIAL_EXAMINATION_DATA);
+        setInvestigationData(INITIAL_INVESTIGATION_DATA);
+        setDiagnosisData(INITIAL_DIAGNOSIS_DATA);
+        setMedicationData(INITIAL_MEDICATION_DATA);
+        setCurrentPatientId(null);
+        setActiveTab('history');
+        setIsPatientDataLoading(false);
+        setPatientDataError(null);
+        return;
+      }
+
+      // Existing patient
+      setIsPatientDataLoading(true);
+      setPatientDataError(null);
+      setCurrentPatientId(selectedPatientId); // Set currentPatientId here
+
+      try {
+        const patientDataFromDB = await getPatient(selectedPatientId);
+        if (patientDataFromDB) {
+          setPatientInfo(patientDataFromDB);
+        } else {
+          throw new Error(`Patient with ID ${selectedPatientId} not found.`);
+        }
+
+        const records = await getPatientMedicalRecords(selectedPatientId);
+        let newHistoryData = { ...INITIAL_HISTORY_DATA };
+        let newExaminationData = { ...INITIAL_EXAMINATION_DATA };
+        // let newInvestigationData = { ...INITIAL_INVESTIGATION_DATA }; // For future use
+        // let newDiagnosisData = { ...INITIAL_DIAGNOSIS_DATA }; // For future use
+
+        records.forEach(record => {
+          switch (record.type) {
+            case 'chiefComplaints':
+              if (Array.isArray(record.complaints) && record.complaints.every(c => typeof c === 'string')) {
+                newHistoryData.chiefComplaints = record.complaints.map((text, index) => ({ 
+                  // Attempt to create a somewhat stable ID if possible, or use random
+                  id: `loaded-${record.id}-${index}-${new Date().getTime()}`, 
+                  text, 
+                  aiSuggestions: null, 
+                  isLoadingAi: false, 
+                  aiError: null 
+                }));
+              } else if (Array.isArray(record.complaints)) { // Already new format (or empty array)
+                 // Ensure objects have all required fields, especially id
+                newHistoryData.chiefComplaints = record.complaints.map((c, index) => ({
+                  id: c.id || `loaded-obj-${record.id}-${index}-${new Date().getTime()}`,
+                  text: c.text || '',
+                  aiSuggestions: c.aiSuggestions || null,
+                  isLoadingAi: c.isLoadingAi || false,
+                  aiError: c.aiError || null,
+                }));
+              } else {
+                newHistoryData.chiefComplaints = []; // Default to empty array if structure is unexpected
+              }
+              newHistoryData.chiefComplaintsRecordId = record.id;
+              break;
+            case 'pastMedicalHistory':
+              newHistoryData.pastMedicalHistory = record.history || { hasHistory: false, details: '' };
+              newHistoryData.pastMedicalHistoryRecordId = record.id;
+              break;
+            case 'pastSurgicalHistory':
+              newHistoryData.pastSurgicalHistory = record.surgeries || [];
+              newHistoryData.pastSurgicalHistoryRecordId = record.id;
+              break;
+            case 'familyHistory':
+              newHistoryData.familyHistory = record.history || '';
+              newHistoryData.familyHistoryRecordId = record.id;
+              break;
+            case 'allergies':
+              newHistoryData.allergies = record.text || '';
+              newHistoryData.allergiesRecordId = record.id;
+              break;
+            case 'vitals': // Assuming 'vitals' is the type string used in dbService
+              newExaminationData.vitals = record.data || INITIAL_EXAMINATION_DATA.vitals;
+              newExaminationData.vitalsRecordId = record.id;
+              break;
+            // TODO: Add cases for other record types as they are implemented
+            // e.g., cardiovascular, respiratory, labs, imaging, diagnosisSummary
+            default:
+              console.warn(`Unknown record type encountered: ${record.type}`);
+          }
+        });
+        setHistoryData(newHistoryData);
+        setExaminationData(newExaminationData);
+        // setInvestigationData(newInvestigationData);
+        // setDiagnosisData(newDiagnosisData);
+
+        const medsFromDB = await getPatientMedications(selectedPatientId);
+        setMedicationData(medsFromDB || INITIAL_MEDICATION_DATA);
+
+      } catch (error) {
+        console.error("Error loading patient data:", error);
+        setPatientDataError(`Failed to load patient data: ${error.message}. Please try again or select another patient.`);
+        // Optionally, could call onBackToPatientList() if a critical load fails
+        // if (error.message.includes("not found")) {
+        //   if(onBackToPatientList) onBackToPatientList();
+        // }
+      } finally {
+        setIsPatientDataLoading(false);
+      }
+    };
+
+    loadData();
+  }, [selectedPatientId, currentUser, onBackToPatientList]); // Added onBackToPatientList to dependencies
   
   // Theme handling
   useEffect(() => {
@@ -173,6 +326,44 @@ function App() {
       setSaveError('Failed to save patient data. Please try again.');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleSaveVitalsExamination = async (vitalsData) => {
+    setIsSavingSection(true);
+    setSectionSaveSuccess('');
+    setSectionSaveError('');
+
+    if (!currentUser) {
+      setSectionSaveError('You must be logged in to save section data.');
+      setIsSavingSection(false);
+      return;
+    }
+
+    if (!currentPatientId) {
+      setSectionSaveError('Please save patient information first to enable section saving.');
+      setIsSavingSection(false);
+      return;
+    }
+
+    const recordData = { type: 'vitals', data: vitalsData };
+
+    try {
+      if (examinationData.vitalsRecordId) {
+        await updateMedicalRecord(examinationData.vitalsRecordId, recordData);
+      } else {
+        const newRecordId = await saveMedicalRecord(currentPatientId, recordData, currentUser.uid);
+        setExaminationData(prev => ({ ...prev, vitalsRecordId: newRecordId }));
+      }
+
+      setExaminationData(prev => ({ ...prev, vitals: vitalsData }));
+      setSectionSaveSuccess('Vitals examination saved successfully!');
+      setTimeout(() => setSectionSaveSuccess(''), 3000);
+    } catch (error) {
+      console.error("Error saving vitals examination:", error);
+      setSectionSaveError('Failed to save vitals examination. Please try again.');
+    } finally {
+      setIsSavingSection(false);
     }
   };
 
@@ -366,6 +557,41 @@ function App() {
     }
   };
 
+  if (isPatientDataLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen bg-gray-100 dark:bg-gray-900">
+        <div className="text-center">
+          {/* You can use a spinner component here if available */}
+          <svg className="animate-spin h-10 w-10 text-blue-600 dark:text-blue-400 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p className="text-lg font-semibold text-gray-700 dark:text-gray-200">Loading patient data...</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Please wait a moment.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (patientDataError) {
+    return (
+      <div className="flex flex-col justify-center items-center h-screen bg-red-50 dark:bg-red-900 p-4">
+        <div className="text-center p-6 bg-white dark:bg-gray-800 rounded-lg shadow-xl">
+          <h2 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-4">Error Loading Patient Data</h2>
+          <p className="text-red-700 dark:text-red-300 mb-6">{patientDataError}</p>
+          {onBackToPatientList && (
+            <Button 
+              onClick={onBackToPatientList}
+              className="bg-red-500 hover:bg-red-600 text-white dark:bg-red-600 dark:hover:bg-red-700"
+            >
+              Back to Patient List
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <ResponsiveContainer className="dark:bg-gray-900 min-h-screen bg-gray-100 py-6 transition-colors duration-300">
       <div className="flex justify-between items-center max-w-7xl mx-auto mb-4">
@@ -373,6 +599,11 @@ function App() {
           AI Patient Management System
         </h1>
         <div className="flex items-center gap-2">
+          {onBackToPatientList && ( // Conditionally render the back button
+            <Button variant="outline" onClick={onBackToPatientList} className="p-2 rounded-full">
+              <ArrowLeft size={18} />
+            </Button>
+          )}
           <Button variant="outline" onClick={toggleTheme} className="rounded-full p-2">
             {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
           </Button>
@@ -510,7 +741,8 @@ function App() {
                   </CardHeader>
                   <CardContent>
                     <ChiefComplaints
-                      onSave={handleSaveChiefComplaints} // Changed from the inline function
+                      initialData={historyData.chiefComplaints} // Pass initialData
+                      onSave={handleSaveChiefComplaints}
                     />
                   </CardContent>
                 </Card>
@@ -550,6 +782,22 @@ function App() {
             </TabsContent>
             
             <TabsContent value="examination">
+              {/* Section Specific Feedback Messages for Examination Tab */}
+              {sectionSaveSuccess && activeTab === 'examination' && (
+                <div className="bg-green-100 text-green-700 px-3 py-2 rounded-md text-sm mb-4">
+                  {sectionSaveSuccess}
+                </div>
+              )}
+              {sectionSaveError && activeTab === 'examination' && (
+                <div className="bg-red-100 text-red-700 px-3 py-2 rounded-md text-sm mb-4">
+                  {sectionSaveError}
+                </div>
+              )}
+              {isSavingSection && activeTab === 'examination' && (
+                <div className="bg-blue-100 text-blue-700 px-3 py-2 rounded-md text-sm mb-4">
+                  Saving section data...
+                </div>
+              )}
               <ResponsiveGrid cols={2} className="gap-4">
                 <Card className="dark:bg-gray-800">
                   <CardHeader>
@@ -557,9 +805,8 @@ function App() {
                   </CardHeader>
                   <CardContent>
                     <VitalsExamination 
-                      onSave={(data) => 
-                        setExaminationData((prev) => ({ ...prev, vitals: data }))
-                      }
+                      initialData={examinationData.vitals}
+                      onSave={handleSaveVitalsExamination}
                     />
                   </CardContent>
                 </Card>
