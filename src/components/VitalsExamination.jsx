@@ -35,27 +35,6 @@ const VitalsExamination = ({ initialData, onSave }) => {
       setFormData(DEFAULT_VITALS_STATE); 
     }
   }, [initialData]);
-    bloodPressureRightArm: "",
-    bloodPressureLeftArm: "",
-    bloodPressureBothLegs: "",
-    posturalDrop: false,
-    cbg: "",
-    spO2: "",
-    pulseRate: "",
-    pulseRhythm: "",
-    pulseVolume: "",
-    pulseCharacter: "",
-    pulseWallThickening: false,
-    radioRadialDelay: false,
-    radioFemoralDelay: false,
-    peripheralPulses: false,
-    respirationRate: "",
-    respirationType: "",
-    accessoryMusclesUsage: false,
-    jugularVenousPressure: "",
-    temperature: "",
-    pain: "",
-  });
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
