@@ -1,28 +1,40 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
-const VitalsExamination = () => {
-  const [formData, setFormData] = useState({
-    bloodPressureRightArm: "",
-    bloodPressureLeftArm: "",
-    bloodPressureBothLegs: "",
-    posturalDrop: false,
-    cbg: "",
-    spO2: "",
-    pulseRate: "",
-    pulseRhythm: "",
-    pulseVolume: "",
-    pulseCharacter: "",
-    pulseWallThickening: false,
-    radioRadialDelay: false,
-    radioFemoralDelay: false,
-    peripheralPulses: false,
-    respirationRate: "",
-    respirationType: "",
-    accessoryMusclesUsage: false,
-    jugularVenousPressure: "",
-    temperature: "",
-    pain: "",
-  });
+// This default structure should ideally match INITIAL_EXAMINATION_DATA.vitals from App.jsx
+// For now, we'll keep the detailed structure here. A more robust solution might involve sharing this.
+const DEFAULT_VITALS_STATE = {
+  bloodPressureRightArm: "",
+  bloodPressureLeftArm: "",
+  bloodPressureBothLegs: "",
+  posturalDrop: false,
+  cbg: "",
+  spO2: "",
+  pulseRate: "",
+  pulseRhythm: "",
+  pulseVolume: "",
+  pulseCharacter: "",
+  pulseWallThickening: false,
+  radioRadialDelay: false,
+  radioFemoralDelay: false,
+  peripheralPulses: false,
+  respirationRate: "",
+  respirationType: "",
+  accessoryMusclesUsage: false,
+  jugularVenousPressure: "",
+  temperature: "",
+  pain: "",
+};
+
+const VitalsExamination = ({ initialData, onSave }) => {
+  const [formData, setFormData] = useState(DEFAULT_VITALS_STATE);
+
+  useEffect(() => {
+    if (initialData) {
+      setFormData(initialData);
+    } else {
+      setFormData(DEFAULT_VITALS_STATE); 
+    }
+  }, [initialData]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -34,7 +46,11 @@ const VitalsExamination = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Vitals Form Data Submitted:", formData);
+    if (onSave) {
+      onSave(formData);
+    } else {
+      console.log("Vitals Form Data Submitted (no onSave prop):", formData);
+    }
   };
 
   return (
