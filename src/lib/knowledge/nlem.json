@@ -1,0 +1,34 @@
+[
+  {
+    "genericName": "Paracetamol",
+    "nlem": true,
+    "forms": ["Tablet", "Syrup", "Injection"],
+    "strengths": ["500mg", "650mg", "125mg/5ml", "150mg/ml"],
+    "indications": ["Pain", "Fever"],
+    "dosing": "Adult: 500mg-1g every 4-6 hours. Max 4g/day. Child: 10-15mg/kg/dose.",
+    "contraindications": ["Severe liver disease", "Hypersensitivity"],
+    "citations": ["NLEM 2022"]
+  },
+  {
+    "genericName": "Amoxicillin",
+    "nlem": true,
+    "forms": ["Capsule", "Syrup"],
+    "strengths": ["250mg", "500mg", "125mg/5ml"],
+    "indications": ["Bacterial infections", "Otitis media", "Sinusitis", "Pneumonia"],
+    "dosing": "Adult: 250-500mg every 8 hours. Child: 25-45mg/kg/day in divided doses.",
+    "contraindications": ["Penicillin allergy"],
+    "adverseEvents": ["Diarrhea", "Nausea", "Rash"],
+    "citations": ["NLEM 2022", "ICMR AMS Guidelines"]
+  },
+  {
+    "genericName": "Metformin",
+    "nlem": true,
+    "forms": ["Tablet"],
+    "strengths": ["500mg", "850mg", "1000mg"],
+    "indications": ["Type 2 Diabetes Mellitus"],
+    "dosing": "Initial: 500mg once or twice daily. Max: 2550mg/day.",
+    "contraindications": ["Severe renal impairment", "Metabolic acidosis"],
+    "adverseEvents": ["Diarrhea", "Nausea", "Vomiting", "Lactic acidosis (rare)"],
+    "citations": ["NLEM 2022"]
+  }
+]
